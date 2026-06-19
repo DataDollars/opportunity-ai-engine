@@ -18,20 +18,28 @@ graph TD
 
 ---
 
-## 2. Step 1: Deploying the FastAPI Backend to Render
+## 2. Step 1: Deploying the FastAPI Backend to Render (Free Web Service)
 
-We have included a `render.yaml` Blueprint file at the root of the repository to automate this setup.
+Render Blueprints require entering credit card details for spam prevention. To deploy completely free without card details, deploy manually as a **Web Service**:
 
 ### Instructions:
 1. Log in or sign up at **[Render](https://render.com/)**.
-2. Click **New** (top-right button) -> **Blueprint**.
+2. Click **New** (top-right button) -> **Web Service**.
 3. Connect your GitHub repository: `https://github.com/DataDollars/opportunity-ai-engine.git`.
-4. Render will read the `render.yaml` file and prompt you to enter the required environment variables:
-   - `GEMINI_API_KEY`: Paste your Gemini API key: `AIzaSyBi1vUc8p7QS6N8TtbfXKAraaq9zEYMvOI`.
-   - `FIREBASE_CREDENTIALS_JSON`: Paste the **raw contents** of your `key.json` file (the Firebase Service Account JSON credentials).
-   - `HUGGINGFACE_API_KEY`: (Optional) Paste a Hugging Face API Token to enable live semantic vector search. If left empty, the backend automatically uses the offline synonym-expanded fallback.
-5. Click **Approve** / **Apply**. Render will build and deploy the FastAPI backend.
-6. Once deployed, note down your Render Web Service URL (e.g. `https://opportunity-ai-backend.onrender.com`).
+4. Configure the Web Service settings:
+   - **Name**: `opportunity-ai-backend`
+   - **Runtime**: `Python`
+   - **Build Command**: `pip install -r backend/requirements.txt`
+   - **Start Command**: `python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+   - **Instance Type**: Select **Free** (no card details required).
+5. Click **Advanced** (at the bottom) to add the following **Environment Variables**:
+   - `FIREBASE_PROJECT_ID`: `opportunity-ai-engine`
+   - `GEMINI_API_KEY`: `AIzaSyBi1vUc8p7QS6N8TtbfXKAraaq9zEYMvOI`
+   - `FIREBASE_CREDENTIALS_JSON`: (Paste the raw JSON contents of your local `key.json` file)
+   - `GEMINI_MODEL`: `gemini-2.5-flash`
+   - `HUGGINGFACE_API_KEY`: (Optional, paste a Hugging Face API token)
+6. Click **Create Web Service**. Render will build and deploy the FastAPI backend.
+7. Once deployed, note down your Render Web Service URL (e.g. `https://opportunity-ai-backend.onrender.com`).
 
 ---
 

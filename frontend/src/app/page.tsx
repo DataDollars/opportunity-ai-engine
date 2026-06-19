@@ -478,7 +478,7 @@ export default function Dashboard() {
                       <div>
                         <span className="text-xs font-semibold text-slate-300 block mb-1.5">Required Documents:</span>
                         <ul className="text-xs text-slate-400 space-y-1">
-                          {match.documents.map((doc, idx) => (
+                          {(match.documents || []).map((doc, idx) => (
                             <li key={idx} className="flex items-center gap-1.5">
                               <span className="text-brand-green font-bold">✓</span> {doc}
                             </li>
@@ -487,11 +487,11 @@ export default function Dashboard() {
                       </div>
 
                       {/* Missing requirements */}
-                      {match.missing_requirements.length > 0 && (
+                      {(match.missing_requirements || []).length > 0 && (
                         <div>
                           <span className="text-xs font-semibold text-amber-400 block mb-1.5">Check / Missing details:</span>
                           <ul className="text-xs text-amber-500/80 space-y-1">
-                            {match.missing_requirements.map((req, idx) => (
+                            {(match.missing_requirements || []).map((req, idx) => (
                               <li key={idx} className="flex items-start gap-1.5">
                                 <span className="font-bold">•</span> {req}
                               </li>
@@ -712,11 +712,11 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {selectedOpp.documents.length > 0 && (
+              {(selectedOpp.documents || []).length > 0 && (
                 <div>
                   <h5 className="text-xs uppercase font-bold text-slate-400 mb-1">Required Documents</h5>
                   <ul className="list-disc pl-5 space-y-1 text-slate-400">
-                    {selectedOpp.documents.map((doc, idx) => (
+                    {(selectedOpp.documents || []).map((doc, idx) => (
                       <li key={idx}>{doc}</li>
                     ))}
                   </ul>
@@ -730,7 +730,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <span className="font-semibold text-slate-300 block">Eligible Sectors:</span>
-                  {selectedOpp.industry.join(", ")}
+                  {(selectedOpp.industry || []).join(", ")}
                 </div>
               </div>
             </div>

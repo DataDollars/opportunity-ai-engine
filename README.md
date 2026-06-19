@@ -145,7 +145,6 @@ Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 If this project helps your business or you find it useful, please consider supporting its development:
 
 * **GitHub Sponsors**: [Sponsor DataDollars](https://github.com/sponsors/DataDollars)
-* **Buy Me a Coffee**: [Support on Buy Me a Coffee](https://www.buymeacoffee.com/datadollars)
 
 Your support helps cover hosting costs (Firebase, Render), Gemini AI API usage quotas, and continues to drive the open-source engineering of this platform!
 

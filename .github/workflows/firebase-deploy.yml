@@ -23,11 +23,11 @@ jobs:
 
       - name: Install Frontend Dependencies
         run: npm ci
-        cwd: frontend
+        working-directory: frontend
 
       - name: Build Next.js App (Static Export)
         run: npm run build
-        cwd: frontend
+        working-directory: frontend
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 

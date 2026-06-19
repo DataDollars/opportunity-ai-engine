@@ -79,6 +79,11 @@ export default function Dashboard() {
   const [registryIndustry, setRegistryIndustry] = useState("");
   const [selectedOpp, setSelectedOpp] = useState<Opportunity | null>(null);
 
+  // AI Semantic Search State
+  const [searchMode, setSearchMode] = useState<"keyword" | "semantic">("keyword");
+  const [semanticResults, setSemanticResults] = useState<Opportunity[]>([]);
+  const [semanticLoading, setSemanticLoading] = useState(false);
+
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
   // Fetch initial data
@@ -116,6 +121,29 @@ export default function Dashboard() {
     fetchOpportunities();
     fetchSources();
   }, []);
+
+  // Debounced semantic search effect
+  useEffect(() => {
+    if (searchMode === "semantic" && registrySearch.trim().length > 1) {
+      const delayDebounce = setTimeout(async () => {
+        try {
+          setSemanticLoading(true);
+          const res = await fetch(`${API_URL}/opportunities/search?query=${encodeURIComponent(registrySearch)}&limit=15`);
+          if (res.ok) {
+            const data = await res.json();
+            setSemanticResults(data);
+          }
+        } catch (err) {
+          console.error("Semantic search query failed:", err);
+        } finally {
+          setSemanticLoading(false);
+        }
+      }, 400);
+      return () => clearTimeout(delayDebounce);
+    } else if (registrySearch.trim().length === 0) {
+      setSemanticResults([]);
+    }
+  }, [registrySearch, searchMode]);
 
   // Trigger sync manually
   const triggerSync = async () => {
@@ -183,10 +211,13 @@ export default function Dashboard() {
     }
   };
 
-  // Filtered Registry List
-  const filteredOpps = opportunities.filter((opp) => {
-    const matchesSearch = opp.name.toLowerCase().includes(registrySearch.toLowerCase()) || 
-                          (opp.description && opp.description.toLowerCase().includes(registrySearch.toLowerCase()));
+  // Filtered Registry List (supports keyword and AI semantic search)
+  const displayOpps = (searchMode === "semantic" && registrySearch.trim().length > 1 ? semanticResults : opportunities).filter((opp) => {
+    if (searchMode === "keyword" && registrySearch.trim()) {
+      const matchesSearch = opp.name.toLowerCase().includes(registrySearch.toLowerCase()) || 
+                            (opp.description && opp.description.toLowerCase().includes(registrySearch.toLowerCase()));
+      if (!matchesSearch) return false;
+    }
     
     const matchesState = !registryState || (opp.state && opp.state.toLowerCase() === registryState.toLowerCase());
     
@@ -194,7 +225,7 @@ export default function Dashboard() {
       (ind) => ind.toLowerCase().includes(registryIndustry.toLowerCase()) || registryIndustry.toLowerCase().includes(ind.toLowerCase())
     );
 
-    return matchesSearch && matchesState && matchesIndustry;
+    return matchesState && matchesIndustry;
   });
 
   return (
@@ -529,11 +560,19 @@ export default function Dashboard() {
               
               {/* Filters */}
               <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                <select
+                  value={searchMode}
+                  onChange={(e) => setSearchMode(e.target.value as "keyword" | "semantic")}
+                  className="px-3 py-1.5 text-xs rounded-lg glass-input cursor-pointer text-cyan-400 font-semibold border-cyan-500/20"
+                >
+                  <option value="keyword">🔍 Keyword Search</option>
+                  <option value="semantic">🧠 AI Semantic Search</option>
+                </select>
                 <input
                   type="text"
                   value={registrySearch}
                   onChange={(e) => setRegistrySearch(e.target.value)}
-                  placeholder="Search scheme name or desc..."
+                  placeholder={searchMode === "semantic" ? "Enter search phrase (e.g. food subsidies)..." : "Search scheme name or desc..."}
                   className="px-3 py-1.5 text-xs rounded-lg glass-input w-full sm:w-48"
                 />
                 <select
@@ -561,13 +600,16 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {loadingOpps ? (
-              <div className="text-center p-12 text-slate-400">Loading scheme databases...</div>
-            ) : filteredOpps.length === 0 ? (
+            {loadingOpps || (searchMode === "semantic" && semanticLoading) ? (
+              <div className="text-center p-12 text-slate-400 flex flex-col items-center justify-center space-y-3">
+                <span className="w-8 h-8 border-4 border-glow-cyan border-t-transparent animate-spin rounded-full"></span>
+                <span>AI is searching and ranking opportunities...</span>
+              </div>
+            ) : displayOpps.length === 0 ? (
               <div className="text-center p-12 text-slate-400">No schemes found matching search criteria.</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredOpps.map((opp) => (
+                {displayOpps.map((opp) => (
                   <div key={opp.id} className="glass-card p-5 rounded-xl flex flex-col justify-between">
                     <div>
                       <div className="flex justify-between items-start gap-2 mb-3">
@@ -577,6 +619,11 @@ export default function Dashboard() {
                         {opp.state && (
                           <span className="px-2 py-0.5 rounded text-[9px] uppercase font-bold bg-cyan-500/10 text-cyan-400">
                             {opp.state}
+                          </span>
+                        )}
+                        {(opp as any).similarity_score !== undefined && (
+                          <span className="px-2 py-0.5 rounded text-[9px] uppercase font-bold bg-violet-500/20 text-violet-400">
+                            Match: {Math.round((opp as any).similarity_score * 100)}%
                           </span>
                         )}
                       </div>

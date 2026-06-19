@@ -11,6 +11,7 @@ from backend.ingestion.scrapers.msme_scraper import MSMEScraper
 from backend.ingestion.scrapers.startup_india_scraper import StartupIndiaScraper
 from backend.ingestion.scrapers.base_scraper import BaseScraper
 from backend.ai.scheme_parser import parse_scheme_text, generate_opportunity_hash
+from backend.ai.embeddings import get_embedding
 
 logger = logging.getLogger(__name__)
 
@@ -195,13 +196,47 @@ async def run_sync_pipeline(dry_run: bool = False, target_source_id: Optional[st
                     opp_ref = db.collection("opportunities").document(opp_id)
                     opp_snap = opp_ref.get()
                     
-                    if not dry_run:
-                        if opp_snap.exists:
-                            logger.info(f"Updating existing opportunity: '{opp_data['name']}' (ID: {opp_id})")
-                            opp_ref.update(opp_data)
-                        else:
-                            logger.info(f"Creating new opportunity: '{opp_data['name']}' (ID: {opp_id})")
-                            opp_ref.set(opp_data)
+                    need_write = True
+                    existing_embedding = None
+                    
+                    if opp_snap.exists:
+                        existing_data = opp_snap.to_dict() or {}
+                        # Check if any key (except last_updated and embedding) has changed
+                        has_changes = False
+                        for key, val in opp_data.items():
+                            if key == "last_updated":
+                                continue
+                            if existing_data.get(key) != val:
+                                has_changes = True
+                                break
+                        
+                        # Also check if existing_data has keys not in opp_data
+                        for key in existing_data.keys():
+                            if key in ["last_updated", "embedding", "id"]:
+                                continue
+                            if key not in opp_data:
+                                has_changes = True
+                                break
+                        
+                        existing_embedding = existing_data.get("embedding")
+                        
+                        if not has_changes and isinstance(existing_embedding, list) and len(existing_embedding) == 384:
+                            need_write = False
+                            logger.info(f"Opportunity '{opp_data['name']}' (ID: {opp_id}) unchanged. Skipping Firestore write.")
+                    
+                    if need_write:
+                        # Generate embedding
+                        embed_text = f"{opp_data['name']} {opp_data.get('description') or ''} {opp_data.get('benefits') or ''}".strip()
+                        embedding = await get_embedding(embed_text)
+                        opp_data["embedding"] = embedding
+                        
+                        if not dry_run:
+                            if opp_snap.exists:
+                                logger.info(f"Updating existing opportunity: '{opp_data['name']}' (ID: {opp_id})")
+                                opp_ref.update(opp_data)
+                            else:
+                                logger.info(f"Creating new opportunity: '{opp_data['name']}' (ID: {opp_id})")
+                                opp_ref.set(opp_data)
                             
                     sync_results["opportunities_processed"] += 1
             

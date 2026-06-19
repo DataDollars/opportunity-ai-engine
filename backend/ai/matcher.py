@@ -43,7 +43,7 @@ def run_local_match_heuristics(company: CompanyProfile, opp: Dict[str, Any]) -> 
         reason_parts.append("Scheme applies nationally.")
 
     # Industry check
-    opp_industries = opp.get("industries") or []
+    opp_industries = opp.get("industry") or opp.get("industries") or []
     opp_ind_lower = [ind.lower() for ind in opp_industries]
     if "all" in opp_ind_lower or not opp_industries:
         score += 15
@@ -119,7 +119,7 @@ async def match_opportunity(company: CompanyProfile, opp: Dict[str, Any]) -> Mat
         - Name: {opp.get('name') or opp.get('scheme_name')}
         - Description: {opp.get('description')}
         - Target State/Location: {opp.get('state')}
-        - Target Industries: {opp.get('industries')}
+        - Target Industries: {opp.get('industry') or opp.get('industries')}
         - Eligibility Criteria: {opp.get('eligibility')}
         - Benefits: {opp.get('benefits')}
         - Documents Required: {opp.get('documents') or opp.get('documents_required')}
@@ -167,7 +167,7 @@ def filter_opportunities_stage1(company: CompanyProfile, opportunities: List[Dic
                 continue
 
         # 2. Basic Industry match (if scheme has specific industries)
-        opp_industries = opp.get("industries") or []
+        opp_industries = opp.get("industry") or opp.get("industries") or []
         opp_ind_lower = [ind.lower() for ind in opp_industries]
         
         if opp_industries and "all" not in opp_ind_lower:

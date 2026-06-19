@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = None
     GEMINI_MODEL: str = "gemini-2.5-flash"
     
+    # Hugging Face Configurations
+    HUGGINGFACE_API_KEY: Optional[str] = None
+    
     # Server configurations
     HOST: str = "0.0.0.0"
     PORT: int = 8000

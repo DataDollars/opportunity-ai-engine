@@ -13,13 +13,27 @@ class TestOpportunityAiEngine(unittest.TestCase):
     
     def setUp(self):
         self.client = TestClient(app)
+        
+        # Force Mock Firestore Client for isolation
+        import backend.database.firebase
+        self._original_db = backend.database.firebase._db
+        backend.database.firebase._db = backend.database.firebase.MockFirestoreClient()
+        
+        # Force Mock Gemini Client for isolation
         import backend.ai.scheme_parser
-        self._original_get_gemini_client = backend.ai.scheme_parser.get_gemini_client
+        import backend.ai.matcher
+        self._original_parser_client = backend.ai.scheme_parser.get_gemini_client
+        self._original_matcher_client = backend.ai.matcher.get_gemini_client
         backend.ai.scheme_parser.get_gemini_client = lambda: None
+        backend.ai.matcher.get_gemini_client = lambda: None
 
     def tearDown(self):
+        import backend.database.firebase
         import backend.ai.scheme_parser
-        backend.ai.scheme_parser.get_gemini_client = self._original_get_gemini_client
+        import backend.ai.matcher
+        backend.database.firebase._db = self._original_db
+        backend.ai.scheme_parser.get_gemini_client = self._original_parser_client
+        backend.ai.matcher.get_gemini_client = self._original_matcher_client
 
     def test_root_endpoint(self):
         """Test that the entry root returns online status."""
@@ -137,6 +151,98 @@ class TestOpportunityAiEngine(unittest.TestCase):
         sync_data = response_sync.json()
         self.assertEqual(sync_data["status"], "completed")
         self.assertIn("results", sync_data)
+
+    def test_stage1_industry_filter(self):
+        """Verify that Stage 1 filtering correctly filters out unrelated industries."""
+        from backend.ai.matcher import filter_opportunities_stage1
+        
+        company = CompanyProfile(
+            company_name="Tech Innovators",
+            industry="Technology",
+            state="Karnataka",
+            employees=15,
+            turnover=5000000,
+            business_type="Startup"
+        )
+        
+        opps = [
+            {
+                "id": "opp-1",
+                "name": "PM Kisan Yojana",
+                "industry": ["Agriculture"],
+                "active_status": "active"
+            },
+            {
+                "id": "opp-2",
+                "name": "Startup India Seed Fund",
+                "industry": ["Technology", "All"],
+                "active_status": "active"
+            }
+        ]
+        
+        filtered = filter_opportunities_stage1(company, opps)
+        filtered_ids = [o["id"] for o in filtered]
+        self.assertNotIn("opp-1", filtered_ids)
+        self.assertIn("opp-2", filtered_ids)
+
+    def test_embeddings_and_similarity(self):
+        """Test Hugging Face embeddings offline fallback and similarity calculations."""
+        from backend.ai.embeddings import get_sin_hash_embedding, compute_cosine_similarity
+        
+        v1 = get_sin_hash_embedding("agriculture technology startup")
+        v2 = get_sin_hash_embedding("farming tools innovation")
+        v3 = get_sin_hash_embedding("automotive heavy industries")
+        
+        self.assertEqual(len(v1), 384)
+        self.assertEqual(len(v2), 384)
+        self.assertEqual(len(v3), 384)
+        
+        # Test unit norm
+        norm1 = sum(x*x for x in v1)
+        self.assertAlmostEqual(norm1, 1.0, places=5)
+        
+        sim1 = compute_cosine_similarity(v1, v2)
+        sim2 = compute_cosine_similarity(v1, v3)
+        # Verify cosine similarity runs successfully
+        self.assertTrue(-1.0 <= sim1 <= 1.0)
+        self.assertTrue(-1.0 <= sim2 <= 1.0)
+        # farming should be closer to agriculture than automotive
+        self.assertGreater(sim1, sim2)
+
+    def test_search_endpoint(self):
+        """Verify the /opportunities/search endpoint works and returns results."""
+        # Directly insert test opportunities into the mock database
+        from backend.database.firebase import get_db
+        db = get_db()
+        opp_ref_1 = db.collection("opportunities").document("test-opp-1")
+        opp_ref_1.set({
+            "name": "PM Kisan Yojana",
+            "description": "Financial support scheme for farmers and agricultural workers.",
+            "benefits": "6000 per year in three installments.",
+            "category": "government_schemes",
+            "industry": ["Agriculture"],
+            "state": "National",
+            "active_status": "active"
+        })
+        
+        opp_ref_2 = db.collection("opportunities").document("test-opp-2")
+        opp_ref_2.set({
+            "name": "MSME Technology Scheme",
+            "description": "Technology upgradation and quality certification support.",
+            "benefits": "Subsidies for cloud computing and tech adoption.",
+            "category": "government_schemes",
+            "industry": ["Technology", "Manufacturing"],
+            "state": "National",
+            "active_status": "active"
+        })
+        
+        response = self.client.get("/opportunities/search?query=farming&limit=2")
+        self.assertEqual(response.status_code, 200)
+        results = response.json()
+        self.assertIsInstance(results, list)
+        self.assertGreater(len(results), 0)
+        # The agriculture scheme should rank higher than technology scheme for query "farming"
+        self.assertEqual(results[0]["id"], "test-opp-1")
 
 if __name__ == "__main__":
     unittest.main()

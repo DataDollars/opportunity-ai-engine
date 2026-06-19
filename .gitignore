@@ -19,6 +19,8 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+deployment_guide.md
+
 
 # Node/Next.js dependencies and builds
 node_modules/

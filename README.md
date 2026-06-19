@@ -123,3 +123,29 @@ To run a manual dry-run sync of the scraper pipeline locally:
 # Trigger local dry run via curl
 curl -X POST "http://localhost:8000/sync?dry_run=true"
 ```
+
+---
+
+## 7. Contributing & Community
+
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+Please read our [Contributing Guidelines](CONTRIBUTING.md) to get started on setting up the codebase locally.
+
+### Security
+If you find any security vulnerabilities, please check our [Security Policy](SECURITY.md) to report them responsibly.
+
+### License
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+
+---
+
+## 8. Support & Sponsorship 💖
+
+If this project helps your business or you find it useful, please consider supporting its development:
+
+* **GitHub Sponsors**: [Sponsor DataDollars](https://github.com/sponsors/DataDollars)
+* **Buy Me a Coffee**: [Support on Buy Me a Coffee](https://www.buymeacoffee.com/datadollars)
+
+Your support helps cover hosting costs (Firebase, Render), Gemini AI API usage quotas, and continues to drive the open-source engineering of this platform!
+

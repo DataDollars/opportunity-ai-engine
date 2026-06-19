@@ -1,0 +1,10 @@
+# ==============================================================================
+# GitHub Funding Configuration
+# Documentation: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+# ==============================================================================
+
+# Enable GitHub Sponsors
+github: [DataDollars]
+
+# Custom sponsorship links (e.g. Buy Me a Coffee, Patreon, etc.)
+custom: ['https://www.buymeacoffee.com/datadollars']

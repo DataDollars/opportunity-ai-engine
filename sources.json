@@ -1,0 +1,56 @@
+[
+  {
+    "id": "myscheme",
+    "name": "myScheme",
+    "url": "https://www.myscheme.gov.in/",
+    "country": "India",
+    "category": "government_schemes",
+    "method": "crawler",
+    "priority": 1
+  },
+  {
+    "id": "data_gov",
+    "name": "Open Government Data India",
+    "url": "https://www.data.gov.in/apis",
+    "country": "India",
+    "category": "open_data",
+    "method": "api",
+    "priority": 1
+  },
+  {
+    "id": "msme",
+    "name": "Ministry of MSME",
+    "url": "https://msme.gov.in/",
+    "country": "India",
+    "category": "msme",
+    "method": "crawler",
+    "priority": 2
+  },
+  {
+    "id": "startup_india",
+    "name": "Startup India",
+    "url": "https://www.startupindia.gov.in/",
+    "country": "India",
+    "category": "startup",
+    "method": "crawler",
+    "priority": 2
+  },
+  {
+    "id": "sidbi",
+    "name": "SIDBI",
+    "url": "https://www.sidbi.in/",
+    "country": "India",
+    "category": "finance",
+    "method": "crawler",
+    "priority": 3
+  },
+  {
+    "id": "dgft",
+    "name": "DGFT",
+    "url": "https://www.dgft.gov.in/",
+    "country": "India",
+    "category": "export",
+    "method": "crawler",
+    "priority": 3
+  }
+]

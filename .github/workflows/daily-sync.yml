@@ -1,0 +1,36 @@
+name: Daily Opportunity Sync
+
+on:
+  schedule:
+    # Run every day at 00:00 UTC
+    - cron: '0 0 * * *'
+  # Enable manual runs from the GitHub Actions UI
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Sync API Endpoint
+        run: |
+          # Use curl to request the sync pipeline with dry_run=false
+          # In production, configure secrets.BACKEND_URL in GitHub repo secrets
+          BACKEND_URL="${{ secrets.BACKEND_URL }}"
+          if [ -z "$BACKEND_URL" ]; then
+            echo "Warning: BACKEND_URL secret is not set. Defaulting to local mock reference."
+            # Fallback placeholder to illustrate output
+            exit 0
+          fi
+          
+          echo "Triggering Opportunity Sync Pipeline..."
+          RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST "$BACKEND_URL/sync?dry_run=false")
+          
+          echo "HTTP Status Code: $RESPONSE"
+          echo "Response Body:"
+          cat response.json
+          
+          if [ "$RESPONSE" -ne 200 ]; then
+            echo "Error: Synchronization pipeline returned status code $RESPONSE"
+            exit 1
+          fi
+          echo "Opportunity Synchronization completed successfully!"

@@ -15,7 +15,7 @@ Only the latest release on the `master` branch is supported with security update
 **Please do not report security vulnerabilities via public GitHub issues.** 
 
 If you discover a vulnerability, please report it to us privately:
-1. Email your report to: `maintainers@datadollars.example` (or update this with your contact email).
+1. Email your report to: `agentechlink@gmail.com` (or update this with your contact email).
 2. Include a detailed description of the issue, step-by-step instructions to reproduce it, and any potential fix.
 3. We will acknowledge receipt of your report within 48 hours and work with you to resolve the issue promptly.
 

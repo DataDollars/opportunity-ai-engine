@@ -150,6 +150,19 @@ async def run_sync_pipeline(dry_run: bool = False, target_source_id: Optional[st
                 # If raw doc is new or changed, we save it and process
                 is_new_raw_doc = not raw_snap.exists
                 if is_new_raw_doc:
+                    # If pdf_url is present and not a dry run, download and extract PDF text
+                    pdf_url = raw_doc.get("pdf_url")
+                    if not dry_run and pdf_url:
+                        try:
+                            logger.info(f"Downloading and extracting PDF content from: {pdf_url}")
+                            from backend.ingestion.extractors.pdf_extractor import extract_pdf_text_from_url
+                            pdf_text = await extract_pdf_text_from_url(pdf_url)
+                            if pdf_text:
+                                raw_doc["raw_text"] = f"{raw_doc['raw_text']}\n\n=== EXTRACTED PDF GUIDELINES ===\n{pdf_text}"
+                                logger.info(f"Successfully appended {len(pdf_text)} characters of PDF text to raw content.")
+                        except Exception as e:
+                            logger.warning(f"Failed to extract PDF text from {pdf_url}: {e}")
+
                     if not dry_run:
                         raw_ref.set(raw_doc)
                     sync_results["new_raw_docs_saved"] += 1

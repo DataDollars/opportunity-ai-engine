@@ -26,17 +26,40 @@ class DataGovScraper(BaseScraper):
 
         try:
             data = extract_html_data(html, self.source_url)
-            doc = {
-                "source_id": self.source_id,
-                "source_url": self.source_url,
-                "title": data.get("title") or "Open Government Data APIS",
-                "raw_text": data.get("raw_text") or "Data.gov.in APIs list",
-                "pdf_url": None,
-                "content_hash": self.generate_content_hash(data.get("raw_text") or "DataGov"),
-                "scraped_at": time.time()
-            }
-            mocks = self.get_mock_documents()
-            return [doc] + mocks
+            dataset_links = []
+            for link in data.get("links", []):
+                # Filter for dataset catalogs or resource details
+                if "/dataset/" in link or "/resource/" in link:
+                    if link not in dataset_links:
+                        dataset_links.append(link)
+
+            logger.info(f"Found {len(dataset_links)} dataset links on data.gov.in. Crawling up to 3 pages...")
+            raw_documents = []
+            
+            for url in dataset_links[:3]:
+                try:
+                    logger.info(f"Crawling dataset details: {url}")
+                    ds_html = await self.fetch_url(url)
+                    if ds_html:
+                        ds_data = extract_html_data(ds_html, url)
+                        if len(ds_data.get("raw_text", "")) > 100:
+                            raw_documents.append({
+                                "source_id": self.source_id,
+                                "source_url": url,
+                                "title": ds_data.get("title") or "Open Data Catalog",
+                                "raw_text": ds_data.get("raw_text"),
+                                "pdf_url": None,
+                                "content_hash": self.generate_content_hash(ds_data.get("raw_text")),
+                                "scraped_at": time.time()
+                            })
+                except Exception as ex:
+                    logger.warning(f"Failed to crawl dataset URL {url}: {ex}")
+
+            if not raw_documents:
+                logger.warning("Could not extract any detailed dataset pages. Using fallback mock documents.")
+                return self.get_mock_documents()
+
+            return raw_documents
         except Exception as e:
             logger.error(f"Error parsing data.gov.in HTML: {e}. Falling back to mocks.")
             return self.get_mock_documents()
